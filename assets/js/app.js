@@ -107,6 +107,7 @@ async function tape() {
 const ROUTES = [
   [/^\/$/, () => home()],
   [/^\/top$/, (m, q) => top(q)],
+  [/^\/markets$/, (m, q) => markets(q)],
   [/^\/t\/([^/]+)$/, m => trader(decodeURIComponent(m[1]))],
   [/^\/launch$/, (m, q) => launch(q)],
   [/^\/c\/([1-9A-HJ-NP-Za-km-z]{32,44})$/, m => coin(m[1])],
@@ -134,7 +135,7 @@ document.addEventListener('click', e => {
   const href = a.getAttribute('href'); if (!href || !href.startsWith('/') || href.startsWith('//') || /^\/(api|m|i|assets)\//.test(href)) return;
   e.preventDefault(); closeOut(); go(href);
 });
-document.addEventListener('click', e => { const r = e.target.closest('tr[data-href]'); if (r && !e.target.closest('a,button')) { closeOut(); go(r.dataset.href); } });
+document.addEventListener('click', e => { const r = e.target.closest('tr[data-href],.ld[data-href]'); if (r && !e.target.closest('a,button')) { closeOut(); go(r.dataset.href); } });
 addEventListener('popstate', route);
 let TIMERS = [];
 const every = (fn, ms) => { TIMERS.push(setInterval(fn, ms)); };
@@ -148,20 +149,47 @@ async function home() {
   <div class="boot" id="boot"></div>
   ${win('fund a trader', `<form id="fundForm" class="big-in" autocomplete="off"><span class="ps">$ fund @</span><input id="fundIn" placeholder="username" spellcheck="false" autocapitalize="off" aria-label="Polymarket username"><button class="b p" type="submit">look up</button></form>
     <div class="sugg" id="sugg"><span class="mute">reading today’s leaderboard…</span></div>`, 'solid')}
-  <section class="sec"><div class="hd"><h2>the money path</h2><a class="b sm" href="/how" data-go>read the manual</a></div><pre class="path" id="path"></pre></section>
+  <div class="strip" id="strip">${['coins live', 'paid to traders', 'payouts', 'traders funded', 'sol price', 'payout at'].map(l => `<div><span class="l">${l}</span><span class="v mute">…</span></div>`).join('')}</div>
+  <section class="sec"><div class="hd"><h2>how it works</h2><a class="b sm" href="/how" data-go>the full manual</a></div>
+    <div class="hsteps">
+      <div><span class="no">01</span><span class="ti">pick a trader</span><p>anyone on polymarket. browse the leaderboards, the markets, or type a username.</p><pre>$ fund @username</pre></div>
+      <div><span class="no">02</span><span class="ti">launch their coin</span><p>name it, add a picture, put in a first buy. the engine creates it on pump.fun. one coin per trader.</p><pre>[x] coin created</pre></div>
+      <div><span class="no">03</span><span class="ti">people trade it</span><p>every trade pays pump.fun’s creator fee into the coin’s wallet. the engine claims it.</p><pre>fees ▸ coin wallet</pre></div>
+      <div><span class="no">04</span><span class="ti">the trader gets paid</span><p>at about $6 the fees go to polymarket’s deposit address for that trader and land in their balance.</p><pre>▸ polymarket balance</pre></div>
+    </div></section>
+  <section class="sec"><div class="hd"><h2>the money path</h2><span class="mute">every arrow is a public transaction</span></div><pre class="path" id="path"></pre></section>
+  <section class="sec"><div class="hd"><h2>who’s winning where</h2><span class="mute">today’s #1 in every polymarket category</span></div><div class="leaders" id="leaders"><div class="empty">reading the category boards…</div></div></section>
   <section class="sec grid2">
     <div><div class="hd"><h2>top today</h2><a class="b sm" href="/top" data-go>full board</a></div><div class="tw" id="topMini"><div class="empty">reading polymarket…</div></div></div>
-    <div><div class="hd"><h2>latest payouts</h2><a class="b sm" href="/ledger" data-go>ledger</a></div><div id="pays"><div class="empty">reading the ledger…</div></div></div>
+    <div><div class="hd"><h2>latest payouts</h2><a class="b sm" href="/ledger" data-go>ledger</a></div><div id="pays"><div class="empty">reading the ledger…</div></div>
+      <div class="hd" style="margin-top:28px"><h2>whales by volume</h2><a class="b sm" href="/top?p=DAY&c=OVERALL&o=VOL" data-go>by volume</a></div><div class="tw" id="whales"><div class="empty">reading…</div></div></div>
   </section>
-  <section class="sec"><div class="hd"><h2>coins on funded</h2><a class="b sm" href="/coins" data-go>all coins</a></div><div id="cardsHome"><div class="empty">reading the coins…</div></div></section>`);
+  <section class="sec"><div class="hd"><h2>hot markets</h2><a class="b sm" href="/markets" data-go>all markets</a></div><div class="mks" id="mksHome"><div class="empty">reading polymarket’s busiest markets…</div></div></section>
+  <section class="sec"><div class="hd"><h2>coins on funded</h2><a class="b sm" href="/coins" data-go>all coins</a></div><div id="cardsHome"><div class="empty">reading the coins…</div></div></section>
+  <section class="sec"><div class="hd"><h2>why funded</h2></div><div class="why">
+    <div>${win('nothing to claim', `<p>other fee pads pay a wallet, an x account or a telegram username, and someone has to claim it. funded pays polymarket’s own deposit address for the trader. it lands in their balance. they don’t sign up, they don’t click anything.</p>`)}</div>
+    <div>${win('one coin per trader', `<p>the first funded launch takes the trader, and the trader is written into the coin’s description where nobody can change it. a second coin for the same trader is refunded. no copies.</p>`)}</div>
+    <div>${win('every lamport on-chain', `<p>every fee claim and every payout is a solana transaction linked from the coin’s page and the ledger. the engine has no sell action and no withdraw action.</p>`)}</div>
+  </div></section>
+  <section class="sec"><div class="hd"><h2>questions</h2><a class="b sm" href="/how" data-go>all answers</a></div>
+    <details class="q" style="margin-left:0"><summary>does the trader have to do anything?</summary><p>no. the payout goes to the solana deposit address polymarket’s own bridge gives their wallet. polymarket swaps it and credits it to their balance.</p></details>
+    <details class="q" style="margin-left:0"><summary>who gets what?</summary><p id="qSplit">the trader gets the coin’s creator fees. the launcher gets the first-buy tokens.</p></details>
+    <details class="q" style="margin-left:0"><summary>what if a trader doesn’t want it?</summary><p>one message and their payouts stop for good. from then on that coin’s fees buy it back and burn it.</p></details>
+    <details class="q" style="margin-left:0"><summary>is this polymarket or pump.fun?</summary><p>neither. funded uses their public apis and programs like anyone can. no trader on this site has endorsed anything.</p></details>
+  </section>`);
   $('#fundForm').addEventListener('submit', e => { e.preventDefault(); const u = $('#fundIn').value.trim().replace(/^@/, ''); if (u) go('/t/' + encodeURIComponent(u)); });
 
   const cfg = await config();
   $('#path').innerHTML = moneyPath(cfg);
+  if (cfg.ok) $('#qSplit').textContent = cfg.cutTaken ? 'the trader gets 90% of the coin’s creator fees, the $FUNDED treasury 10%. the launcher gets the first-buy tokens.' : 'the trader gets 100% of the coin’s creator fees while no treasury is set. the launcher gets the first-buy tokens.';
   const lines = [];
   const boot = $('#boot');
   const line = (k, v, cls = 'v') => { const dots = '.'.repeat(Math.max(2, (innerWidth < 600 ? 26 : 34) - k.length)); const d = document.createElement('div'); d.innerHTML = `&gt; ${esc(k)} <span class="mute">${dots}</span> <span class="${cls}">${v}</span>`; if (!REDUCE) d.style.visibility = 'hidden'; boot.appendChild(d); lines.push(d); };
-  const [top, st, led, cs] = await Promise.all([api('/api/poly?op=top&period=DAY&limit=10'), stats(), api('/api/coins?op=ledger'), api('/api/coins')]);
+  const [top, st, led, cs, vol] = await Promise.all([api('/api/poly?op=top&period=DAY&limit=10'), stats(), api('/api/coins?op=ledger'), api('/api/coins'), api('/api/poly?op=top&period=DAY&order=VOL&limit=5')]);
+  const strip = vals => { $('#strip').innerHTML = vals.map(([l, v, c]) => `<div><span class="l">${l}</span><span class="v ${c || ''}">${v}</span></div>`).join(''); };
+  const live = st.ok && !st.offline;
+  strip([['coins live', live ? st.live : '—'], ['paid to traders', live ? sol(st.paidSol) : '—', live && st.paidSol > 0 ? 'g' : ''], ['payouts', live ? st.payouts : '—'], ['traders funded', live ? st.traders : '—'],
+    ['sol price', cfg.solUsd ? '$' + (+cfg.solUsd).toFixed(2) : '—'], ['payout at', cfg.payMinSol ? cfg.payMinSol + ' SOL' : '—']]);
   if (top.ok && top.list.length) {
     line('polymarket leaderboard', `ok <span class="dim">(${top.list.length} traders read)</span>`, 'ok');
     const t0 = top.list[0]; line('top trader today', `<a href="/t/${encodeURIComponent(t0.user)}" data-go>@${esc(t0.user)}</a> ${pnl(t0.pnl)}`);
@@ -169,7 +197,9 @@ async function home() {
     const max = Math.max(...top.list.map(x => x.pnl || 0));
     $('#topMini').innerHTML = `<table class="t"><thead><tr><th>#</th><th>trader</th><th class="n">p&amp;l today</th><th></th></tr></thead><tbody>${top.list.map(x => `<tr class="click" data-href="/t/${encodeURIComponent(x.user)}"><td class="mute">${x.rank}</td><td>@${esc(x.user)}${x.coin ? ` <span class="g">$${esc(x.coin.symbol)}</span>` : ''}</td><td class="n">${pnl(x.pnl)}</td><td>${bar(x.pnl, max, 12)}</td></tr>`).join('')}</tbody></table>`;
   } else { line('polymarket leaderboard', 'offline right now', 'r'); $('#sugg').innerHTML = '<span class="mute">the leaderboard didn’t answer. type any username.</span>'; $('#topMini').innerHTML = '<div class="empty">polymarket didn’t answer just now.</div>'; }
-  if (st.ok && !st.offline) {
+  if (vol.ok && vol.list.length) { const mv = Math.max(...vol.list.map(x => x.vol || 0)); $('#whales').innerHTML = `<table class="t"><tbody>${vol.list.map(x => `<tr class="click" data-href="/t/${encodeURIComponent(x.user)}"><td>@${esc(x.user)}</td><td class="n">${usd(x.vol)}</td><td>${bar(x.vol, mv, 10)}</td></tr>`).join('')}</tbody></table>`; }
+  else $('#whales').innerHTML = '<div class="empty">didn’t load.</div>';
+  if (live) {
     line('coins on funded', String(st.live));
     line('paid to traders', `${sol(st.paidSol)} <span class="dim">in ${st.payouts} payout${st.payouts === 1 ? '' : 's'}</span>`);
     line('engine', st.lastTick ? `last pass ${ago(st.lastTick)} ago` : 'waiting for its first pass');
@@ -180,15 +210,41 @@ async function home() {
     else line('polymarket deposit bridge', 'didn’t answer', 'r');
   }
   const cur = document.createElement('div'); cur.innerHTML = '&gt; <span class="cur"></span>'; boot.appendChild(cur);
-  if (!REDUCE) for (const d of lines) { d.style.visibility = ''; d.classList.add('in'); await sleep(110); }
+  const reveal = (async () => { if (!REDUCE) for (const d of lines) { d.style.visibility = ''; d.classList.add('in'); await sleep(110); } })();
 
   const L = (led.ok && led.ledger) || [];
-  $('#pays').innerHTML = L.length ? `<div class="feed">${L.slice(0, 8).map(p => `<div class="it"><span class="at">${ago(p.at)}</span><span><a href="/c/${esc(p.mint)}" data-go>$${esc(p.symbol)}</a> → <a href="/t/${encodeURIComponent(p.trader)}" data-go>@${esc(p.trader)}</a> <span class="g">${sol(p.sol)}</span>${p.usd ? ` <span class="dim">~${usd(p.usd)}</span>` : ''}</span><a class="tx" href="${tx(p.sig)}" target="_blank" rel="noopener">tx ↗</a></div>`).join('')}</div>`
+  $('#pays').innerHTML = L.length ? `<div class="feed">${L.slice(0, 6).map(p => `<div class="it"><span class="at">${ago(p.at)}</span><span><a href="/c/${esc(p.mint)}" data-go>$${esc(p.symbol)}</a> → <a href="/t/${encodeURIComponent(p.trader)}" data-go>@${esc(p.trader)}</a> <span class="g">${sol(p.sol)}</span>${p.usd ? ` <span class="dim">~${usd(p.usd)}</span>` : ''}</span><a class="tx" href="${tx(p.sig)}" target="_blank" rel="noopener">tx ↗</a></div>`).join('')}</div>`
     : `<div class="empty"><b>no payouts yet.</b> the first one goes out when a coin’s fees reach ${cfg.payMinSol ? cfg.payMinSol + ' SOL' : 'the payout minimum'}.</div>`;
   const C = (cs.ok && cs.coins) || [];
   $('#cardsHome').innerHTML = C.length ? cards(C.slice(0, 6)) : `<div class="empty"><b>no coins yet.</b> the first trader to be funded is whoever you pick. <a class="b sm" href="/launch" data-go>launch one</a></div>`;
   paintArt($('#cardsHome'));
+  api('/api/poly?op=cats').then(j => {
+    const el = $('#leaders'); if (!el) return;
+    if (!j.ok) { el.innerHTML = '<div class="empty">the category boards didn’t answer.</div>'; return; }
+    el.innerHTML = j.list.map(x => x.user ? `<div class="ld" data-href="/t/${encodeURIComponent(x.user)}"><span class="c">${esc(x.cat.toLowerCase())}</span><span class="u">@${esc(x.user)}</span><span>${pnl(x.pnl)} <span class="mute">today</span></span><span>${x.coin ? `<a class="g" href="/c/${esc(x.coin.mint)}" data-go>$${esc(x.coin.symbol)}</a>` : `<a class="b sm" href="/launch?u=${encodeURIComponent(x.user)}" data-go>fund</a>`}</span></div>`
+      : `<div class="ld"><span class="c">${esc(x.cat.toLowerCase())}</span><span class="mute">nobody yet today</span></div>`).join('');
+  });
+  api('/api/poly?op=markets&limit=4').then(j => { const el = $('#mksHome'); if (!el) return; el.innerHTML = j.ok && j.list.length ? j.list.map(marketCard).join('') : '<div class="empty">polymarket’s markets didn’t answer just now.</div>'; });
+  await reveal;
 }
+function oddsBar(p, w = innerWidth < 600 ? 18 : 40) { const k = Math.max(0, Math.min(w, Math.round(p * w))); return `<span class="oddsbar">${'█'.repeat(k)}<i>${'░'.repeat(w - k)}</i></span>`; }
+function marketCard(m) {
+  const end = m.end ? new Date(m.end) : null;
+  return `<div class="mk" data-cond="${esc(m.cond)}"><div class="q"><a class="u" href="https://polymarket.com/event/${esc(m.slug)}" target="_blank" rel="noopener">${esc(m.question)}</a></div>
+    <div class="meta"><span>24h volume ${usd(m.vol24)}</span><span>total ${usd(m.vol)}</span>${end && !isNaN(end) ? `<span>ends ${end.toISOString().slice(0, 10)}</span>` : ''}${m.n > 1 ? `<span>${m.n} markets in this event</span>` : ''}</div>
+    <div class="odds">${m.outcomes.map((o, i) => `<span class="o">${esc(o)}</span>${oddsBar(m.prices[i])}<span class="p">${Math.round(m.prices[i] * 100)}¢</span>`).join('')}</div>
+    <div class="cta" style="margin-top:10px"><button class="b sm" type="button" data-holders="${esc(m.cond)}" data-outs="${esc(JSON.stringify(m.outcomes))}">who’s betting big</button></div><div class="holdbox"></div></div>`;
+}
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-holders]'); if (!b) return;
+  const box = b.closest('.mk').querySelector('.holdbox'); if (box.dataset.open) { box.innerHTML = ''; delete box.dataset.open; b.textContent = 'who’s betting big'; return; }
+  box.dataset.open = 1; b.textContent = 'hide'; box.innerHTML = '<div class="hint">reading the biggest holders…</div>';
+  const outs = JSON.parse(b.dataset.outs || '[]');
+  const j = await api('/api/poly?op=holders&cond=' + encodeURIComponent(b.dataset.holders));
+  if (!j.ok) { box.innerHTML = `<div class="hint r">${esc(j.error || 'didn’t load')}</div>`; return; }
+  const by = [0, 1].map(i => j.sides.flatMap(s => s.holders).filter(h => h.side === i).sort((a, c) => (c.amount || 0) - (a.amount || 0)).slice(0, 5));
+  box.innerHTML = `<div class="hold">${by.map((hs, i) => `<div><div class="hint" style="margin:0 0 4px">biggest on ${esc(outs[i] || (i ? 'no' : 'yes'))}</div>${hs.length ? hs.map(h => `<div class="h"><a href="/t/${encodeURIComponent(h.user)}" data-go>@${esc(h.user)}</a><span class="a">${Math.round(h.amount || 0).toLocaleString('en-US')} shares</span>${h.coin ? `<a class="g" href="/c/${esc(h.coin.mint)}" data-go>$${esc(h.coin.symbol)}</a>` : `<a class="b sm" href="/launch?u=${encodeURIComponent(h.user)}" data-go>fund</a>`}</div>`).join('') : '<div class="hint">nobody public</div>'}</div>`).join('')}</div>`;
+});
 function moneyPath(cfg) {
   const cut = cfg && cfg.cutTaken;
   return `  people trade <span class="h">$COIN</span> on pump.fun
@@ -229,11 +285,13 @@ async function top(q) {
   set(`<div class="crumbs"><a href="/" data-go>funded</a> / top traders</div>
   <h1>top traders on polymarket</h1>
   <p class="sub">polymarket’s own leaderboard, read live. pick anyone on it (or anyone else) and launch the coin that funds them.</p>
+  <form class="search-mini" id="qf" autocomplete="off"><span>$ fund @</span><input id="qi" placeholder="any polymarket username" spellcheck="false" autocapitalize="off"><button class="b sm" type="submit">go</button></form>
   <div class="sec" style="margin-top:22px;display:flex;flex-direction:column;gap:10px">
     <div class="tabs">${PER.map(x => `<a href="${link(x, c, o)}" data-go class="${x === p ? 'on' : ''}">${x.toLowerCase()}</a>`).join('')}<span class="mute" style="padding:3px 8px">|</span>${['PNL', 'VOL'].map(x => `<a href="${link(p, c, x)}" data-go class="${x === o ? 'on' : ''}">by ${x === 'PNL' ? 'profit' : 'volume'}</a>`).join('')}</div>
     <div class="tabs">${CATS.map(x => `<a href="${link(p, x, o)}" data-go class="${x === c ? 'on' : ''}">${x.toLowerCase()}</a>`).join('')}</div>
   </div>
   <div class="tw" id="board" style="margin-top:14px"><div class="empty">reading polymarket…</div></div>`);
+  $('#qf').addEventListener('submit', e => { e.preventDefault(); const u = $('#qi').value.trim().replace(/^@/, ''); if (u) go('/t/' + encodeURIComponent(u)); });
   const j = await api(`/api/poly?op=top&period=${p}&cat=${c}&order=${o}&limit=50`);
   if (!j.ok) { $('#board').innerHTML = `<div class="msg bad">${esc(j.error || 'polymarket didn’t answer')}</div>`; return; }
   if (!j.list.length) { $('#board').innerHTML = '<div class="empty">nobody on this board yet.</div>'; return; }
@@ -244,6 +302,20 @@ async function top(q) {
   <td>${x.coin ? `<a class="g" href="/c/${esc(x.coin.mint)}" data-go>$${esc(x.coin.symbol)}</a>` : '<span class="mute">—</span>'}</td>
   <td>${x.coin ? '' : `<a class="b sm" href="/launch?u=${encodeURIComponent(x.user)}" data-go>fund</a>`}</td></tr>`).join('')}</tbody></table>
   <p class="hint">source: polymarket data api · ${p.toLowerCase()} · ${c.toLowerCase()} · refreshed every minute</p>`;
+}
+
+
+// ---------- markets: where the money is ----------
+const TAGS = ['all', 'politics', 'sports', 'crypto', 'economy', 'tech', 'culture', 'world'];
+async function markets(q) {
+  const tag = TAGS.includes((q.get('tag') || '').toLowerCase()) ? q.get('tag').toLowerCase() : 'all';
+  set(`<div class="crumbs"><a href="/" data-go>funded</a> / markets</div>
+  <h1>markets: where the money is</h1>
+  <p class="sub">polymarket’s busiest markets right now, by 24-hour volume, with live odds. open one to see who’s betting big on each side, and fund them.</p>
+  <div class="tabs" style="margin-top:18px">${TAGS.map(t => `<a href="/markets?tag=${t}" data-go class="${t === tag ? 'on' : ''}">${t}</a>`).join('')}</div>
+  <div class="mks sec" id="mkl" style="margin-top:18px"><div class="empty">reading polymarket…</div></div>`);
+  const j = await api(`/api/poly?op=markets&tag=${tag}&limit=16`);
+  $('#mkl').innerHTML = !j.ok ? `<div class="msg bad">${esc(j.error || 'polymarket didn’t answer')}</div>` : !j.list.length ? '<div class="empty">no open markets here right now.</div>' : j.list.map(marketCard).join('') + '<p class="hint">source: polymarket gamma api · refreshed every minute · prices are the last traded odds</p>';
 }
 
 // ---------- 3. a trader ----------
@@ -259,7 +331,8 @@ async function trader(name) {
   const pos = j.positions;
   $('#tr').innerHTML = `<div class="in">
     <div class="tcard">${t.image ? `<img src="${esc(t.image)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}<div><h1>@${esc(t.user)}${t.verified ? ' <span class="dim" style="font-size:14px">✓ verified</span>' : ''}</h1>
-      <div class="cta" style="margin-top:8px">${ext(t.url, 'polymarket ↗')}${t.x ? ext('https://x.com/' + t.x, 'x/' + esc(t.x) + ' ↗') : ''}</div></div></div>
+      <div class="dim" style="margin-top:4px">${j.value != null ? 'portfolio ' + usd(j.value) + ' · ' : ''}${j.positions ? j.positions.length + ' open position' + (j.positions.length === 1 ? '' : 's') + ' shown' : ''}</div>
+      <div class="cta" style="margin-top:8px">${ext(t.url, 'polymarket ↗')}${t.x ? ext('https://x.com/' + t.x, 'x/' + esc(t.x) + ' ↗') : ''}<a class="b sm" href="https://x.com/intent/post?text=${encodeURIComponent(`@${t.user} on Polymarket: ${t.pnl.all != null ? (t.pnl.all >= 0 ? '+' : '') + Math.round(t.pnl.all).toLocaleString('en-US') + ' all time.' : ''} Their coin's fees would land in their Polymarket balance.\n\n${location.origin}/t/${encodeURIComponent(t.user)}`)}" target="_blank" rel="noopener">share ↗</a></div></div></div>
     <div class="stats" style="margin-top:26px">${P.map(k => `<div class="stat"><span class="l">p&amp;l ${k === 'all' ? 'all time' : k}</span><span class="v">${pnl(t.pnl[k])}</span><span class="mute" style="font-size:12px">${t.rank[k] ? 'rank #' + t.rank[k] : t.pnl[k] === null ? 'no trades' : ''}</span></div>`).join('')}</div>
     <div class="grid2 sec">
       <div>${win('profit by period', `<div class="tw"><table class="t"><tbody>${P.map(k => `<tr><td class="dim">${k}</td><td class="n">${pnl(t.pnl[k])}</td><td>${bar(Math.abs(t.pnl[k] || 0), maxAbs, 16)}</td><td class="n dim">vol ${usd(t.vol[k])}</td></tr>`).join('')}</tbody></table></div>`)}</div>
@@ -270,6 +343,8 @@ async function trader(name) {
       <p class="hint">polymarket wallet: <span class="dim">${esc(t.wallet)}</span></p>`)}</section>
     <section class="sec"><div class="hd"><h2>open positions</h2><span class="mute">largest first</span></div><div class="tw">${pos && pos.length ? `<table class="t"><thead><tr><th>market</th><th>side</th><th class="n">value</th><th class="n">p&amp;l</th><th class="n">price</th></tr></thead><tbody>
       ${pos.map(p => `<tr><td class="w">${p.slug ? `<a class="u" href="https://polymarket.com/event/${esc(p.slug)}" target="_blank" rel="noopener">${esc(p.title)}</a>` : esc(p.title)}</td><td>${esc(p.outcome)}</td><td class="n">${usd(p.value)}</td><td class="n">${pnl(p.pnl)}</td><td class="n dim">${(p.cur * 100).toFixed(0)}¢</td></tr>`).join('')}</tbody></table>` : `<div class="empty">${pos ? 'no open positions right now.' : 'positions didn’t load.'}</div>`}</div></section>
+    <section class="sec"><div class="hd"><h2>latest trades</h2><span class="mute">newest first</span></div><div class="tw">${j.trades && j.trades.length ? `<table class="t"><thead><tr><th>when</th><th>side</th><th>market</th><th>outcome</th><th class="n">size</th><th class="n">price</th><th class="n">usd</th></tr></thead><tbody>
+      ${j.trades.map(x => `<tr><td class="dim">${ago(x.at)} ago</td><td class="${x.side === 'BUY' ? 'g' : 'r'}">${esc(x.side.toLowerCase())}</td><td class="w">${x.slug ? `<a class="u" href="https://polymarket.com/event/${esc(x.slug)}" target="_blank" rel="noopener">${esc(x.title)}</a>` : esc(x.title)}</td><td>${esc(x.outcome)}</td><td class="n">${x.size != null ? Math.round(x.size).toLocaleString('en-US') : '—'}</td><td class="n dim">${x.price != null ? Math.round(x.price * 100) + '¢' : '—'}</td><td class="n">${usd(x.usd)}</td></tr>`).join('')}</tbody></table>` : `<div class="empty">${j.trades ? 'no recent trades.' : 'trades didn’t load.'}</div>`}</div></section>
   </div>`;
 }
 
@@ -434,7 +509,8 @@ async function coin(mint) {
           <p class="lead" style="font-size:15px">every trade of $${esc(c.symbol)} funds <a class="u" href="/t/${encodeURIComponent(c.trader)}" data-go>@${esc(c.trader)}</a> on polymarket.</p>
           ${c.optedOut ? `<div class="msg bad">@${esc(c.trader)} asked not to be funded. from now on this coin’s fees buy $${esc(c.symbol)} back and burn it.</div>` : ''}
           ${c.state !== 'live' ? `<div class="msg">state: ${esc(c.state)}${c.err ? ' · ' + esc(c.err) : ''}</div>` : ''}
-          <div class="cta">${ext('https://pump.fun/coin/' + c.mint, 'buy on pump.fun ↗', 'b p')}${ext('https://dexscreener.com/solana/' + c.mint, 'chart ↗')}${ext(poly(c.trader), '@' + esc(c.trader) + ' on polymarket ↗')}<button class="b sm" type="button" data-copy="${esc(c.mint)}" data-what="Address copied">copy ca</button></div></div></div>
+          <div class="dim" id="tsnap" style="margin-top:6px"></div>
+          <div class="cta">${ext('https://pump.fun/coin/' + c.mint, 'buy on pump.fun ↗', 'b p')}${ext('https://dexscreener.com/solana/' + c.mint, 'chart ↗')}${ext(poly(c.trader), '@' + esc(c.trader) + ' on polymarket ↗')}<button class="b sm" type="button" data-copy="${esc(c.mint)}" data-what="Address copied">copy ca</button><a class="b sm" href="https://x.com/intent/post?text=${encodeURIComponent(`Every trade of $${c.symbol} funds @${c.trader}'s next Polymarket bet.\n\n${location.origin}/c/${c.mint}`)}" target="_blank" rel="noopener">share ↗</a></div></div></div>
       <div class="stats sec">
         <div class="stat"><span class="l">market cap</span><span class="v">${usd(c.mcapUsd || mk.mcapUsd)}</span><span class="mute" style="font-size:12px">${mk.complete ? 'graduated' : mk.progress != null ? Math.round(mk.progress * 100) + '% of the curve' : ''}</span></div>
         <div class="stat"><span class="l">paid to @${esc(c.trader)}</span><span class="v g">${sol(c.paidSol)}</span><span class="mute" style="font-size:12px">${c.payouts} payout${c.payouts === 1 ? '' : 's'}</span></div>
@@ -454,6 +530,7 @@ async function coin(mint) {
       <section class="sec">${win('the record', `<dl class="kv"><dt>contract</dt><dd>${esc(c.mint)}</dd><dt>coin wallet</dt><dd>${esc(c.wallet)}</dd><dt>launched by</dt><dd>${esc(c.launcher)}</dd><dt>created</dt><dd>${c.createSig ? `<a class="u" href="${tx(c.createSig)}" target="_blank" rel="noopener">${short(c.createSig, 6)} ↗</a>` : '—'}</dd><dt>description</dt><dd class="dim" style="white-space:pre-wrap">${esc(c.description)}</dd></dl>`)}</section>
     </div>`;
     paintArt($('#cn'));
+    api('/api/poly?op=trader&u=' + encodeURIComponent(c.trader)).then(t => { const el = $('#tsnap'); if (el && t.ok) el.innerHTML = `@${esc(t.trader.user)} on polymarket: today ${pnl(t.trader.pnl.day)} · all time ${pnl(t.trader.pnl.all)}${t.value != null ? ' · portfolio ' + usd(t.value) : ''}`; });
     if (c.depositSvm) api('/api/poly?op=status&svm=' + c.depositSvm).then(s => { const b = $('#bridge'); if (!b) return; if (!s.ok) { b.textContent = 'polymarket’s bridge didn’t answer just now.'; return; } b.innerHTML = s.deposits.length ? 'polymarket’s bridge has seen ' + s.deposits.length + ' deposit' + (s.deposits.length === 1 ? '' : 's') + ' here: ' + s.deposits.slice(0, 5).map(x => esc(x.status || 'seen')).join(', ') : 'polymarket’s bridge hasn’t seen a deposit at this address yet.'; });
     return true;
   };
@@ -549,11 +626,12 @@ const HELP = `<b>commands</b>
   fund &lt;username&gt;     open a polymarket trader          e.g. fund HomeRunHazard
   launch [username]    launch a coin for a trader
   top [day|week|month|all] [politics|sports|crypto|…] [vol]
+  markets [politics|sports|crypto|economy|tech|culture|world]
   coin &lt;address|$TICKER&gt;
   coins · ledger · how · token · home
   connect              connect a solana wallet
   clear                close this panel
-<span class="mute">keys: / focuses the command line · 1–6 open the menu · esc closes this</span>`;
+<span class="mute">keys: / focuses the command line · 1–7 open the menu · esc closes this</span>`;
 const hist = []; let hi = -1;
 function out(html) { const o = $('#out'); o.innerHTML = `<div class="l">${html}</div>`; o.hidden = false; }
 function closeOut() { $('#out').hidden = true; }
@@ -575,6 +653,7 @@ async function run(line) {
     const j = await api('/api/coins'); const hit = j.ok && j.coins.find(x => x.symbol === sym);
     return hit ? go('/c/' + hit.mint) : out(`no coin called $${esc(sym)} on funded.`);
   }
+  if (c === 'markets' || c === 'm') return go('/markets' + (a ? '?tag=' + encodeURIComponent(a.toLowerCase()) : ''));
   if (['coins', 'ledger', 'how', 'token'].includes(c)) return go('/' + c);
   if (c === 'home' || c === 'cd' || c === '~') return go('/');
   if (c === 'connect' || c === 'wallet') return connect();
@@ -592,8 +671,13 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeOut();
   if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.key === '/') { e.preventDefault(); $('#cmd').focus(); }
-  const m = { 1: '/top', 2: '/launch', 3: '/coins', 4: '/ledger', 5: '/how', 6: '/token' }[e.key];
+  const m = { 1: '/top', 2: '/markets', 3: '/launch', 4: '/coins', 5: '/ledger', 6: '/how', 7: '/token' }[e.key];
   if (m) { closeOut(); go(m); }
 });
 
-tape(); route();
+async function foot() {
+  const cfg = await config(); const f = $('#foot'); if (!f) return;
+  f.innerHTML = `<span>FUNDED · launch a coin on any polymarket trader · not affiliated with polymarket or pump.fun · nothing here is financial advice</span>
+  <span class="links"><a href="/how" data-go>manual</a><a href="/ledger" data-go>ledger</a><a href="/token" data-go>$FUNDED</a>${cfg.x ? `<a href="${esc(cfg.x)}" target="_blank" rel="noopener">x ↗</a>` : ''}${cfg.ca ? `<a href="https://pump.fun/coin/${esc(cfg.ca)}" target="_blank" rel="noopener">pump.fun ↗</a>` : ''}</span>`;
+}
+tape(); route(); foot();
