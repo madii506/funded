@@ -1,7 +1,8 @@
 // GET /m/<id>  (→ /api/meta?id=)   the metadata JSON a coin's on-chain uri points at (when IPFS wasn't used)
 // GET /i/<id>  (→ /api/meta?img=)  its picture
 const L = require('./_lib');
-module.exports = async (req, res) => {
+module.exports = async (req, res) => { try { await handle(req, res); } catch (e) { if (!res.headersSent) L.send(res, 503, { error: 'records offline' }); } };
+async function handle(req, res) {
   const qy = L.query(req);
   if (!L.dbReady()) return L.send(res, 404, { error: 'not found' });
   await L.ready();
@@ -20,4 +21,4 @@ module.exports = async (req, res) => {
   const k = r[0], site = L.origin(req), page = site + '/c/' + k.mint;
   L.send(res, 200, { name: k.name, symbol: k.symbol, description: k.description, image: site + '/i/' + k.id, showName: true, createdOn: site,
     twitter: k.twitter || undefined, website: k.website || page, external_url: page }, 'public, max-age=300, s-maxage=86400, stale-while-revalidate=604800');
-};
+}
