@@ -18,17 +18,20 @@ code{font:inherit;color:var(--fg)}
 .nowrap{white-space:nowrap}
 hr.rule{border:0;border-top:1px dashed var(--line2);margin:26px 0}
 
-/* ---------- the bar ---------- */
-.bar{position:fixed;top:0;left:0;right:0;height:var(--bar);z-index:40;display:flex;align-items:center;gap:22px;padding:0 20px;background:var(--bg);border-bottom:1px dashed var(--line2)}
-.bar .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.06em}
+/* ---------- the bar: logo left, the menu centred, wallet right ---------- */
+.bar{position:fixed;top:0;left:0;right:0;height:var(--bar);z-index:40;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:0 20px;background:var(--bg);border-bottom:1px dashed var(--line2)}
+.bar .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.06em;justify-self:start}
 .bar .logo img{width:18px;height:18px}
-.bar nav{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
+.bar nav{display:flex;gap:4px;justify-content:center;overflow-x:auto;scrollbar-width:none;max-width:100%}
 .bar nav::-webkit-scrollbar{display:none}
-.bar nav a{padding:5px 9px;color:var(--dim);white-space:nowrap}
+.bar nav a{padding:5px 10px;color:var(--dim);white-space:nowrap;border:1px dashed transparent}
+.bar nav a::before{content:'[';color:var(--mute);margin-right:5px}.bar nav a::after{content:']';color:var(--mute);margin-left:5px}
 .bar nav a .k{color:var(--mute);margin-right:6px}
-.bar nav a:hover,.bar nav a.on{color:var(--bg);background:var(--fg)}
-.bar nav a:hover .k,.bar nav a.on .k{color:#555}
-.bar .right{display:flex;align-items:center;gap:12px}
+.bar nav a:hover{color:var(--fg);border-color:var(--line2)}
+.bar nav a.on{color:var(--bg);background:var(--fg)}
+.bar nav a.on::before,.bar nav a.on::after,.bar nav a.on .k{color:#555}
+.bar nav a.hot{color:var(--g)}.bar nav a.hot.on{color:var(--bg);background:var(--g)}
+.bar .right{display:flex;align-items:center;gap:12px;justify-self:end}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--g);box-shadow:0 0 8px rgba(46,232,138,.7);vertical-align:1px}
 .dot.off{background:var(--mute);box-shadow:none}
 
@@ -223,3 +226,50 @@ details.q p{margin:8px 0 0 2ch;color:var(--dim)}
   .man p,.man li{margin-left:0}.man .tw,details.q{margin-left:0}
   .path{font-size:11px}
 }
+
+/* ---------- more pieces ---------- */
+.strip{display:grid;grid-template-columns:repeat(6,1fr);border:1px dashed var(--line2);margin-top:26px}
+.strip>div{padding:14px 16px;border-right:1px dashed var(--line)}
+.strip>div:last-child{border-right:0}
+.strip .v{display:block;font-size:20px;font-weight:800;margin-top:4px}
+.strip .l{color:var(--dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.1em}
+@media (max-width:1000px){.strip{grid-template-columns:repeat(3,1fr)}.strip>div:nth-child(3){border-right:0}.strip>div:nth-child(-n+3){border-bottom:1px dashed var(--line)}}
+@media (max-width:560px){.strip{grid-template-columns:repeat(2,1fr)}.strip>div{border-right:1px dashed var(--line)!important;border-bottom:1px dashed var(--line)}.strip>div:nth-child(2n){border-right:0!important}}
+.hsteps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px dashed var(--line2)}
+.hsteps>div{padding:16px;border-right:1px dashed var(--line);display:flex;flex-direction:column;gap:8px}
+.hsteps>div:last-child{border-right:0}
+.hsteps .no{color:var(--g);font-weight:800}
+.hsteps .ti{font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.hsteps p{margin:0;color:var(--dim);font-size:13px}
+.hsteps pre{color:var(--fg);font-size:12px;line-height:1.25;margin-top:auto}
+@media (max-width:900px){.hsteps{grid-template-columns:1fr 1fr}.hsteps>div:nth-child(2){border-right:0}.hsteps>div:nth-child(-n+2){border-bottom:1px dashed var(--line)}}
+@media (max-width:520px){.hsteps{grid-template-columns:1fr}.hsteps>div{border-right:0;border-bottom:1px dashed var(--line)}}
+.leaders{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.leaders .ld{border:1px dashed var(--line2);padding:12px 14px;display:flex;flex-direction:column;gap:6px;cursor:pointer}
+.leaders .ld:hover{border-color:var(--fg)}
+.leaders .ld .c{color:var(--mute);font-size:11.5px;text-transform:uppercase;letter-spacing:.12em}
+.leaders .ld .u{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:900px){.leaders{grid-template-columns:repeat(2,1fr)}}
+.mks{display:flex;flex-direction:column;gap:14px}
+.mk{border:1px dashed var(--line2);padding:14px 16px}
+.mk .q{font-weight:700;font-size:14.5px}
+.mk .meta{color:var(--mute);font-size:12px;margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 16px}
+.mk .odds{display:grid;grid-template-columns:minmax(90px,auto) 1fr 56px;gap:6px 12px;align-items:center;margin-top:10px;font-size:13px}
+.mk .odds .o{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk .odds .p{text-align:right;font-weight:700}
+.mk .hold{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+.mk .hold .h{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+.mk .hold .h .a{color:var(--dim)}
+@media (max-width:700px){.mk .hold{grid-template-columns:1fr}}
+.oddsbar{color:var(--fg);letter-spacing:-1px;overflow:hidden;white-space:nowrap}.oddsbar i{font-style:normal;color:#262626}
+.why{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.why h3{margin-bottom:8px}.why p{margin:0;color:var(--dim)}
+@media (max-width:900px){.why{grid-template-columns:1fr}}
+.foot{max-width:1180px;margin:60px auto 0;padding:22px 20px 0;border-top:1px dashed var(--line2);color:var(--mute);font-size:12.5px;display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between}
+.foot a:hover{color:var(--fg)}
+.foot .links{display:flex;flex-wrap:wrap;gap:6px 16px}
+.search-mini{display:flex;align-items:center;gap:10px;border-bottom:1px dashed var(--line2);padding:6px 0;max-width:520px;margin-top:14px}
+.search-mini:focus-within{border-bottom-color:var(--fg)}
+.search-mini span{color:var(--dim)}
+.search-mini input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--fg);font:inherit;caret-color:var(--g)}
+@media (max-width:760px){.bar{grid-template-columns:auto 1fr auto;gap:10px}.bar nav{justify-content:flex-start}.bar nav a{padding:5px 6px}.bar nav a::before,.bar nav a::after{display:none}}
