@@ -82,4 +82,61 @@ async function bridgeStatus(svm) {
   });
 }
 
-module.exports = { leaderboard, trader, positions, depositAddress, bridgeStatus, isName, isEvm, PERIODS, CATS };
+
+const GAMMA = 'https://gamma-api.polymarket.com';
+const TAGS = { all: null, politics: 'politics', sports: 'sports', crypto: 'crypto', economy: 'economy', tech: 'tech', culture: 'pop-culture', world: 'geopolitics' };
+const num = v => (Number.isFinite(+v) ? +v : null);
+const arr = v => { try { return Array.isArray(v) ? v : JSON.parse(v || '[]'); } catch { return []; } };
+// the markets with the most money moving through them right now (one market per event: the busiest one)
+async function markets(tag = 'all', limit = 12) {
+  const t = Object.prototype.hasOwnProperty.call(TAGS, tag) ? TAGS[tag] : null;
+  return L.remember('mk:' + tag + ':' + limit, 60000, async () => {
+    const u = new URL(GAMMA + '/events'); u.searchParams.set('active', 'true'); u.searchParams.set('closed', 'false'); u.searchParams.set('order', 'volume24hr');
+    u.searchParams.set('ascending', 'false'); u.searchParams.set('limit', String(Math.min(40, limit * 2))); if (t) u.searchParams.set('tag_slug', t);
+    const r = await L.getJson(u.toString(), {}, 9000);
+    if (!r.ok || !Array.isArray(r.json)) throw new Error('Polymarket markets didn’t answer (' + r.status + ')');
+    const out = [];
+    for (const e of r.json) {
+      const ms = (e.markets || []).filter(m => m.active && !m.closed && m.conditionId).sort((a, b) => (num(b.volume24hr) || 0) - (num(a.volume24hr) || 0));
+      const m = ms[0]; if (!m) continue;
+      const outcomes = arr(m.outcomes).map(String), prices = arr(m.outcomePrices).map(Number);
+      if (!outcomes.length || prices.length !== outcomes.length) continue;
+      out.push({ event: String(e.title || '').slice(0, 160), question: String(m.question || e.title || '').slice(0, 200), slug: String(e.slug || ''), cond: String(m.conditionId),
+        outcomes: outcomes.slice(0, 2), prices: prices.slice(0, 2), vol24: num(e.volume24hr), vol: num(e.volume), liq: num(e.liquidity), end: e.endDate || m.endDate || null, n: (e.markets || []).length });
+      if (out.length >= limit) break;
+    }
+    return out;
+  });
+}
+// the biggest holders on each side of one market
+async function holders(cond) {
+  if (!/^0x[0-9a-fA-F]{64}$/.test(String(cond || ''))) return [];
+  return L.remember('ho:' + cond, 60000, async () => {
+    const r = await L.getJson(`${DATA}/holders?market=${cond}&limit=6`, {}, 8000);
+    if (!r.ok || !Array.isArray(r.json)) throw new Error('holders didn’t answer');
+    return r.json.map(t => ({ holders: (t.holders || []).filter(h => h.displayUsernamePublic !== false && h.name).slice(0, 6).map(h => ({ user: String(h.name).slice(0, 64), wallet: String(h.proxyWallet || '').toLowerCase(), amount: num(h.amount), side: h.outcomeIndex, verified: !!h.verified })) }));
+  });
+}
+async function trades(wallet, limit = 10) {
+  if (!isEvm(wallet)) return [];
+  return L.remember('trd:' + wallet, 45000, async () => {
+    const r = await L.getJson(`${DATA}/trades?user=${wallet}&limit=${limit}`, {}, 8000);
+    if (!r.ok || !Array.isArray(r.json)) throw new Error('trades didn’t answer');
+    return r.json.map(t => ({ side: String(t.side || ''), outcome: String(t.outcome || '').slice(0, 40), title: String(t.title || '').slice(0, 140), slug: String(t.eventSlug || t.slug || ''),
+      size: num(t.size), price: num(t.price), usd: num(t.size) != null && num(t.price) != null ? +(t.size * t.price).toFixed(2) : null, at: t.timestamp ? new Date(t.timestamp * 1000).toISOString() : null }));
+  });
+}
+async function value(wallet) {
+  if (!isEvm(wallet)) return null;
+  return L.remember('val:' + wallet, 60000, async () => { const r = await L.getJson(`${DATA}/value?user=${wallet}`, {}, 7000); const v = Array.isArray(r.json) && r.json[0] ? num(r.json[0].value) : null; return v; });
+}
+// today's #1 in every category
+async function leaders(period = 'DAY') {
+  return L.remember('cats:' + period, 60000, async () => {
+    const cats = CATS.filter(c => c !== 'OVERALL' && c !== 'MENTIONS');
+    const out = await Promise.all(cats.map(async c => { try { const r = await leaderboard({ period, cat: c, limit: 1 }); return r[0] ? { cat: c, ...r[0] } : { cat: c, user: null }; } catch { return { cat: c, user: null, error: true }; } }));
+    return out;
+  });
+}
+
+module.exports = { leaderboard, trader, positions, depositAddress, bridgeStatus, markets, holders, trades, value, leaders, isName, isEvm, PERIODS, CATS, TAGS };
