@@ -680,4 +680,4 @@ async function foot() {
   f.innerHTML = `<span>FUNDED · launch a coin on any polymarket trader · not affiliated with polymarket or pump.fun · nothing here is financial advice</span>
   <span class="links"><a href="/how" data-go>manual</a><a href="/ledger" data-go>ledger</a><a href="/token" data-go>$FUNDED</a>${cfg.x ? `<a href="${esc(cfg.x)}" target="_blank" rel="noopener">x ↗</a>` : ''}${cfg.ca ? `<a href="https://pump.fun/coin/${esc(cfg.ca)}" target="_blank" rel="noopener">pump.fun ↗</a>` : ''}</span>`;
 }
-tape(); route(); foot();
+tape(); route();
