@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FUNDED</title>
+<meta name="description" content="Launch a pump.fun coin on any Polymarket trader. Its fees land in their Polymarket balance, ready for the next bet. Nothing to claim.">
+<meta property="og:title" content="FUNDED">
+<meta property="og:description" content="Launch a pump.fun coin on any Polymarket trader. Its fees fund their next bet.">
+<meta property="og:image" content="/assets/img/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="/assets/img/og.png">
+<meta name="theme-color" content="#000000">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/assets/img/favicon-64.png">
+<link rel="apple-touch-icon" href="/assets/img/icon-180.png">
+<link rel="preload" href="/assets/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/css/f.css?v=1">
+</head>
+<body>
+<header class="bar">
+  <a class="logo" href="/" data-go><img src="/assets/img/favicon-64.png" alt=""><span>FUNDED</span></a>
+  <nav id="menu">
+    <a href="/top" data-go data-r="top"><span class="k">1</span>top traders</a>
+    <a href="/launch" data-go data-r="launch"><span class="k">2</span>launch</a>
+    <a href="/coins" data-go data-r="coins"><span class="k">3</span>coins</a>
+    <a href="/ledger" data-go data-r="ledger"><span class="k">4</span>ledger</a>
+    <a href="/how" data-go data-r="how"><span class="k">5</span>how</a>
+    <a href="/token" data-go data-r="token"><span class="k">6</span>$FUNDED</a>
+  </nav>
+  <div class="right"><button class="b sm" type="button" data-connect>connect</button></div>
+</header>
+<div class="tape" id="tape"><div class="run" id="tapeRun"><span class="mute">reading polymarket's leaderboard…</span></div></div>
+<main id="screen"><div class="boot"><div>&gt; loading<span class="cur"></span></div></div></main>
+<div class="out" id="out" hidden></div>
+<footer class="cli">
+  <span class="ps">funded:~$</span>
+  <input id="cmd" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type help, or: fund username" aria-label="command line">
+  <span class="hint2">/ to type · ↑ history</span>
+</footer>
+<div class="toast" id="toast"></div>
+<script type="module" src="/assets/js/app.js?v=1"></script>
+</body>
+</html>

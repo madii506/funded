@@ -1,0 +1,12 @@
+{
+  "name": "funded",
+  "private": true,
+  "engines": { "node": "22.x" },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.98.0",
+    "sharp": "0.34.4"
+  },
+  "overrides": { "rpc-websockets": "9.3.3" }
+}
