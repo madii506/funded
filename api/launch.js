@@ -118,19 +118,22 @@ async function selftest(req, res) {
   const sim = async bytes => { const j = await L.rpcRaw('simulateTransaction', [Buffer.from(bytes).toString('base64'), { encoding: 'base64', sigVerify: false, replaceRecentBlockhash: true, commitment: 'confirmed' }]);
     const v = j.result && j.result.value; return { err: v ? v.err : j.error && j.error.message, logs: v && v.logs ? v.logs.slice(-3) : [] }; };
   const out = {}; const w = Keypair.generate(), mk = Keypair.generate();
+  // the simulation pays with a well-funded public wallet: signatures aren't checked when simulating, nothing is sent, and the programs run all the way through
+  const SIMP = L.isAddr((process.env.SIM_PAYER || '').trim()) ? process.env.SIM_PAYER.trim() : '5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9';
   const step = async (name, fn) => { const t0 = Date.now(); try { out[name] = { ok: true, ...(await fn()), ms: Date.now() - t0 }; } catch (e) { out[name] = { ok: false, error: String(e.message).slice(0, 200), ms: Date.now() - t0 }; } };
   let top = null;
   await step('polymarket', async () => { const lb = await P.leaderboard({ period: 'DAY', limit: 1 }); top = lb[0]; const t = top && await P.trader(top.user); return { topToday: top && top.user, wallet: t && t.wallet, pnlDay: t && t.pnl.day }; });
   let svm = null;
   await step('bridge', async () => { svm = await P.depositAddress(top.wallet); const again = await P.depositAddress(top.wallet); return { svm, stable: svm === again }; });
-  await step('create', async () => { const tx = await E.portal({ publicKey: w.publicKey.toBase58(), action: 'create', tokenMetadata: { name: 'funded selftest', symbol: 'TEST', uri: L.origin(req) + '/m/selftest' }, mint: mk.publicKey.toBase58(), denominatedInSol: 'true', amount: 0.01, slippage: 10, priorityFee: 0.0001, pool: 'pump' }, [mk, w]);
+  await step('create', async () => { const tx = await E.portal({ publicKey: SIMP, action: 'create', tokenMetadata: { name: 'funded selftest', symbol: 'TEST', uri: L.origin(req) + '/m/selftest' }, mint: mk.publicKey.toBase58(), denominatedInSol: 'true', amount: 0.01, slippage: 10, priorityFee: 0.0001, pool: 'pump' }, [mk]);
     return { bytes: tx.serialize().length, signers: tx.signatures.length, sim: await sim(tx.serialize()) }; });
   await step('claim', async () => { const tx = await E.portal({ publicKey: w.publicKey.toBase58(), action: 'collectCreatorFee', priorityFee: 0.00001, pool: 'pump' }, [w]); return { bytes: tx.serialize().length, sim: await sim(tx.serialize()) }; });
-  await step('payout', async () => { const bh = await E.blockhash(); const tx = new Transaction({ feePayer: w.publicKey, blockhash: bh.blockhash, lastValidBlockHeight: bh.lastValidBlockHeight });
-    tx.add(SystemProgram.transfer({ fromPubkey: w.publicKey, toPubkey: new PublicKey(svm), lamports: 30000000 })); tx.sign(w); return { to: svm, sim: await sim(tx.serialize()) }; });
+  await step('payout', async () => { const bh = await E.blockhash(); const payer = new PublicKey(SIMP); const tx = new Transaction({ feePayer: payer, blockhash: bh.blockhash, lastValidBlockHeight: bh.lastValidBlockHeight });
+    tx.add(SystemProgram.transfer({ fromPubkey: payer, toPubkey: new PublicKey(svm), lamports: 30000000 }));
+    return { to: svm, sim: await sim(tx.serialize({ requireAllSignatures: false, verifySignatures: false })) }; });
   await step('keys', async () => { if (!L.dbReady()) return { db: false }; const a = await E.keys('selftest-x'), b2 = await E.keys('selftest-x'); return { stable: a.wallet.publicKey.equals(b2.wallet.publicKey), distinct: !a.wallet.publicKey.equals(a.mint.publicKey) }; });
   await step('price', async () => ({ solUsd: await E.solUsd(), payMin: await E.payMin() }));
-  L.send(res, 200, { ok: true, note: 'throwaway keys, nothing is sent; insufficient-funds errors in the simulations are expected', ...out });
+  L.send(res, 200, { ok: true, note: 'simulations only: signatures are not checked and nothing is sent. the claim needs a creator with fees waiting, so an error there is expected', payer: SIMP, ...out });
 }
 
 module.exports = async (req, res) => {

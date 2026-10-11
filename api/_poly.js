@@ -113,7 +113,8 @@ async function holders(cond) {
   if (!/^0x[0-9a-fA-F]{64}$/.test(String(cond || ''))) return [];
   return L.remember('ho:' + cond, 60000, async () => {
     const r = await L.getJson(`${DATA}/holders?market=${cond}&limit=6`, {}, 8000);
-    if (!r.ok || !Array.isArray(r.json)) throw new Error('holders didn’t answer');
+    if (!r.ok) throw new Error('holders didn’t answer');
+    if (!Array.isArray(r.json)) return [];                     // polymarket answers null for markets it has no holder list for
     return r.json.map(t => ({ holders: (t.holders || []).filter(h => h.displayUsernamePublic !== false && h.name).slice(0, 6).map(h => ({ user: String(h.name).slice(0, 64), wallet: String(h.proxyWallet || '').toLowerCase(), amount: num(h.amount), side: h.outcomeIndex, verified: !!h.verified })) }));
   });
 }
