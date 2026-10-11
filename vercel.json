@@ -39,6 +39,10 @@
       "destination": "/"
     },
     {
+      "source": "/markets",
+      "destination": "/"
+    },
+    {
       "source": "/launch",
       "destination": "/"
     },

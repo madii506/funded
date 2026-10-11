@@ -17,30 +17,32 @@
 <link rel="icon" type="image/png" sizes="64x64" href="/assets/img/favicon-64.png">
 <link rel="apple-touch-icon" href="/assets/img/icon-180.png">
 <link rel="preload" href="/assets/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/css/f.css?v=1">
+<link rel="stylesheet" href="/assets/css/f.css?v=2">
 </head>
 <body>
 <header class="bar">
   <a class="logo" href="/" data-go><img src="/assets/img/favicon-64.png" alt=""><span>FUNDED</span></a>
-  <nav id="menu">
-    <a href="/top" data-go data-r="top"><span class="k">1</span>top traders</a>
-    <a href="/launch" data-go data-r="launch"><span class="k">2</span>launch</a>
-    <a href="/coins" data-go data-r="coins"><span class="k">3</span>coins</a>
-    <a href="/ledger" data-go data-r="ledger"><span class="k">4</span>ledger</a>
-    <a href="/how" data-go data-r="how"><span class="k">5</span>how</a>
-    <a href="/token" data-go data-r="token"><span class="k">6</span>$FUNDED</a>
+  <nav id="menu" aria-label="main">
+    <a href="/top" data-go data-r="top"><span class="k">1</span>traders</a>
+    <a href="/markets" data-go data-r="markets"><span class="k">2</span>markets</a>
+    <a href="/launch" data-go data-r="launch" class="hot"><span class="k">3</span>launch</a>
+    <a href="/coins" data-go data-r="coins"><span class="k">4</span>coins</a>
+    <a href="/ledger" data-go data-r="ledger"><span class="k">5</span>ledger</a>
+    <a href="/how" data-go data-r="how"><span class="k">6</span>how</a>
+    <a href="/token" data-go data-r="token"><span class="k">7</span>$FUNDED</a>
   </nav>
   <div class="right"><button class="b sm" type="button" data-connect>connect</button></div>
 </header>
 <div class="tape" id="tape"><div class="run" id="tapeRun"><span class="mute">reading polymarket's leaderboard…</span></div></div>
 <main id="screen"><div class="boot"><div>&gt; loading<span class="cur"></span></div></div></main>
+<footer class="foot" id="foot"></footer>
 <div class="out" id="out" hidden></div>
 <footer class="cli">
   <span class="ps">funded:~$</span>
-  <input id="cmd" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type help, or: fund username" aria-label="command line">
+  <input id="cmd" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type help · fund username · markets · launch" aria-label="command line">
   <span class="hint2">/ to type · ↑ history</span>
 </footer>
 <div class="toast" id="toast"></div>
-<script type="module" src="/assets/js/app.js?v=1"></script>
+<script type="module" src="/assets/js/app.js?v=2"></script>
 </body>
 </html>
