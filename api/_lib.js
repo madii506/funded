@@ -120,10 +120,10 @@ async function q(text, params = []) {
     if (!pg) { const { PGlite } = require('@electric-sql/pglite'); pg = new PGlite(process.env.F_PGLITE); }
     return (await pg.query(text, params)).rows;
   }
-  if (!pg) { const { neon } = require('@neondatabase/serverless'); pg = neon(process.env.DATABASE_URL || process.env.POSTGRES_URL); }
+  if (!pg) { const { neon } = require('@neondatabase/serverless'); pg = neon(process.env.FUNDED_DB_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL); }
   return pg.query(text, params);
 }
-const dbReady = () => !!(process.env.F_PGLITE || process.env.DATABASE_URL || process.env.POSTGRES_URL);
+const dbReady = () => !!(process.env.F_PGLITE || process.env.FUNDED_DB_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL);
 function ready() {
   if (!made) made = (async () => {
     for (const st of [
